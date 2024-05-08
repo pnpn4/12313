@@ -7,7 +7,7 @@ int main(){
 
 	initscr();
 	noecho();
-	keypad(stdscr, TRUE);
+	keypad(stdscr, TRUE);	
 
 	srand((unsigned int)time(NULL));
 
@@ -37,7 +37,7 @@ void InitTetris(){
 	blockRotate=0;
 	blockY=-1;
 	blockX=WIDTH/2-2;
-	score=0;
+	score=0;	
 	gameOver=0;
 	timed_out=0;
 
@@ -48,7 +48,7 @@ void InitTetris(){
 	PrintScore(score);
 }
 
-void DrawOutline(){
+void DrawOutline(){	
 	int i,j;
 	/* 블럭이 떨어지는 공간의 태두리를 그린다.*/
 	DrawBox(0,0,HEIGHT,WIDTH);
@@ -117,7 +117,7 @@ int ProcessCommand(int command){
 		break;
 	}
 	if(drawFlag) DrawChange(field,command,nextBlock[0],blockRotate,blockY,blockX);
-	return ret;
+	return ret;	
 }
 
 void DrawField(){
@@ -151,7 +151,7 @@ void DrawNextBlock(int *nextBlock){
 				printw(" ");
 				attroff(A_REVERSE);
 			}
-			else printw(" ");
+			else printw(".");
 		}
 	}
 }
@@ -162,7 +162,7 @@ void DrawBlock(int y, int x, int blockID,int blockRotate,char tile){
 		for(j=0;j<4;j++){
 			if(block[blockID][blockRotate][i][j]==1 && i+y>=0){
 				move(i+y+1,j+x+1);
-				attron(A_REVERSE);
+				if (tile != '.') attron(A_REVERSE);
 				printw("%c",tile);
 				attroff(A_REVERSE);
 			}
@@ -238,47 +238,6 @@ char menu(){
 
 int CheckToMove(char f[HEIGHT][WIDTH],int currentBlock,int blockRotate, int blockY, int blockX){
 	// user code
-	for(int y=0;y<=3;y++)
-    {
-        for(int x=0;x<=3;x++)
-        {
-            if(block[currentBlock][blockRotate][blockY+y][blockX+x])
-            {
-                if(f[blockY+y][blockX+x])
-                    return 0;
-                if((blockY+y>HEIGHT-1)||(blockX+x>WIDTH-1)||(blockX+x<=-1))
-                    return 0;
-            }
-        }
-    }
-    return 1;
-}
-
-void DrawChange(char f[HEIGHT][WIDTH],int command,int currentBlock,int blockRotate, int blockY, int blockX){
-	// user code
-	//1. 이전 블록 정보를 찾는다. ProcessCommand의 switch문을 참조할 것
-    //2. 이전 블록 정보를 지운다. DrawBlock함수 참조할 것.
-
-    switch(command){
-	case KEY_UP:
-        DrawBlock(blockY, blockX, currentBlock, (blockRotate+3)%4, '.');
-		break;
-	case KEY_DOWN:
-        DrawBlock(blockY-1, blockX, currentBlock, blockRotate,'.');
-		break;
-	case KEY_RIGHT:
-        DrawBlock(blockY, blockX-1, currentBlock, blockRotate,'.');
-		break;
-	case KEY_LEFT:
-        DrawBlock(blockY, blockX+1, currentBlock, blockRotate,'.');
-		break;
-    }
-	//3. 새로운 블록 정보를 그린다.
-    DrawBlock(blockY, blockX, currentBlock, blockRotate,'0');
-}
-
-int CheckToMove(char f[HEIGHT][WIDTH],int currentBlock,int blockRotate, int blockY, int blockX){
-	// user code
 	for (int y=0; y<4; y++){
 		for (int x=0; x<4; x++){
 			if(block[currentBlock][blockRotate][y][x]==1){
@@ -286,11 +245,11 @@ int CheckToMove(char f[HEIGHT][WIDTH],int currentBlock,int blockRotate, int bloc
 				if (blockY+y>=HEIGHT) return 0;
 
 				if (blockX+x<0||blockX+x>=WIDTH) return 0;
-
+				
 			}
 		}
 	}
-
+	
 
 	return 1;
 }
@@ -317,7 +276,7 @@ void DrawChange(char f[HEIGHT][WIDTH],int command,int currentBlock,int blockRota
 	//2. 이전 블록 정보를 지운다. DrawBlock함수 참조할 것.
 	DrawBlock(blockY, blockX, currentBlock, blockRotate, comma);
 
-	//3. 새로운 블록 정보를 그린다.
+	//3. 새로운 블록 정보를 그린다. 
 	switch (command){
 	case KEY_UP:
 		blockRotate=(blockRotate+1)%4;
@@ -336,65 +295,74 @@ void DrawChange(char f[HEIGHT][WIDTH],int command,int currentBlock,int blockRota
 	DrawBlock(blockY, blockX, currentBlock, blockRotate, s);
 }
 
-
 void BlockDown(int sig){
 	// user code
 	alarm(1);
-    if(CheckToMove(field,nextBlock[0], blockRotate, blockY, blockX))
-        DrawChange(field,KEY_DOWN, nextBlock[0], blockRotate, ++blockY, blockX);
-    else if(blockY==-1)
-        gameOver=1;
-    else
-    {
-        AddBlockToField(field, nextBlock[0],blockRotate,blockY,blockX);
-        score=score+DeleteLine(field);
-        nextBlock[0]=nextBlock[1];
-        nextBlock[1]=rand()%7;
-        blockRotate=0;
-        blockY=-1;
-        blockX=WIDTH/2-2;
-        DrawField();
-        DrawBlock(blockY,blockX,nextBlock[0],blockRotate,'0');
-        DrawNextBlock(nextBlock);
-        PrintScore(score);
-    }
+	if (CheckToMove(field,nextBlock[0], blockRotate, blockY+1, blockX)==1){
+		blockY++;
+		DrawChange(field, KEY_DOWN, nextBlock[0], blockRotate, blockY, blockX);
+
+	}
+	else{
+		if (blockY==-1) {
+			gameOver = 1;
+		}
+	
+		AddBlockToField(field, nextBlock[0], blockRotate, blockY, blockX);
+		score += DeleteLine(field);
+		nextBlock[0]=nextBlock[1];
+		nextBlock[1]=rand()%7;
+		blockRotate = 0;
+		blockY = -1;
+		blockX = WIDTH/2-2;		
+		DrawNextBlock(nextBlock);
+		PrintScore(score);
+		DrawField();	
+		DrawBlock(blockY, blockX, nextBlock[0], blockRotate, ' ');
+	
+	}
 	//강의자료 p26-27의 플로우차트를 참고한다.
 }
 
 void AddBlockToField(char f[HEIGHT][WIDTH],int currentBlock,int blockRotate, int blockY, int blockX){
 	// user code
-	for(int y=0;y<=3;y++)
-    {
-        for(int x=0;x<=3;x++)
-        {
-            if(block[currentBlock][blockRotate][blockY+y][blockX+x]==1)
-                f[blockY+y][blockX+x]=1;
-        }
-    }
+	for (int y=0; y<4; y++){
+		for (int x=0; x<4; x++){
+			if (block[currentBlock][blockRotate][y][x]){
+				f[blockY+y][blockX+x] = 1;
+			}
+		}
+	}
 	//Block이 추가된 영역의 필드값을 바꾼다.
 }
 
 int DeleteLine(char f[HEIGHT][WIDTH]){
 	// user code
-	int x,cnt=0;
-	for(int y=0;y<=3;y++)
-    {
-        for(x=0;x<=WIDTH-1;x++)
-        {
-            if(!f[blockY+y][x])
-                break;
-        }
-        if(x==WIDTH)
-        {
-            for(int i=0;i<=WIDTH-1;i++)
-                f[blockY+y][x]=0;
-        }
-        cnt++;
-    }
-    return cnt*cnt*100;
+	int FULL = 0;
+	int LINE = 0;
 	//1. 필드를 탐색하여, 꽉 찬 구간이 있는지 탐색한다.
+	for (int y=0; y<HEIGHT; y++){
+		for (int x=0; x<WIDTH; x++){
+			if (f[y][x] == 1) FULL++;
+		}
+		if(FULL==WIDTH){
+			for(int j=y; j>0; j--){
+				for(int i=0; i<WIDTH; i++){
+					f[j][i]=f[j-1][i];	
+				}
+			}
+			for(int i=0; i<WIDTH; i++){
+				f[0][i] = 0;
+			}
+			LINE++;
+		}
+	FULL = 0;
+	
+	}
+	DrawField();
+	return LINE*LINE*100;
 	//2. 꽉 찬 구간이 있으면 해당 구간을 지운다. 즉, 해당 구간으로 필드값을 한칸씩 내린다.
-
+}
 
 ///////////////////////////////////////////////////////////////////////////
 
